@@ -1,4 +1,5 @@
 from lxml.html import fromstring
+import lxml
 import logging
 
 from .transformer import Transformer
@@ -28,12 +29,15 @@ class HtmlParser(Transformer):
             http://lxml.de/
         """
         errors = []
+        tree = None
         try:
             tree = fromstring(data)
+        except lxml.etree.ParserError as e:
+            logging.error('HtmlParser - ' + str(e))
+            errors.append('HtmlParser: ' + str(e))
         except AttributeError as e:
             logging.error('HtmlParser - ' + str(e))
             errors.append('HtmlParser: ' + str(e))
-            tree = None
         return tree, errors
 
     def run(self, record):
@@ -50,7 +54,7 @@ class HtmlParser(Transformer):
             dict: Updated record with the data being the traversable html tree and
             the metadata containing new errors and the executed transformation step.
         """
-        logging.warning("HtmlParser -  parsing: {0}".format(record['url']))
+        logging.info("HtmlParser -  parsing: {0}".format(record['url']))
         self.check_required_transformations(record['metadata']['transformations'])
 
         parsed_html, errors = HtmlParser.parse_html(record['data'])

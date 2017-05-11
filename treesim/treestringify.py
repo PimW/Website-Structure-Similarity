@@ -41,13 +41,13 @@ class TreeStringifyTransformer(Transformer):
             errors.append('TreeStringify: NoneType object')
             return "", errors
 
-        tree_string = tree[0]
+        tree_string = str(tree[0])
         #print(tree_string)
         for child in tree[2]:
             child_string, child_errors = self.stringify(child, depth + 1)
             errors.extend(child_errors)
 
-            tree_string += child_string
+            tree_string += '.' + child_string
 
         return tree_string, errors
 
@@ -64,9 +64,8 @@ class TreeStringifyTransformer(Transformer):
             dict: Updated record with the data being the traversable html tree and
             the metadata containing new errors and the executed transformation step.
         """
-        logging.warning("TreeParser -  parsing: {0}".format(record['url']))
+        logging.info("TreeStringify -  parsing: {0}".format(record['url']))
         self.check_required_transformations(record['metadata']['transformations'])
-
 
         tree_string, errors = self.stringify(record['data'])
         record['data'] = tree_string

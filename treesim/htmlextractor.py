@@ -68,7 +68,7 @@ class HtmlExtractor(Transformer):
         for record in file:
             if file_count >= batch_size:
                 total_file_count += file_count
-                yield results # break
+                yield results  # break
                 results = []
                 file_count = 0
 
@@ -129,6 +129,6 @@ class HtmlExtractor(Transformer):
         Returns:
             dict: Transformed record with all relevant data and metadata in the dict format.
         """
-        logging.warning("HtmlExtractor -  extracting")
+        logging.info("HtmlExtractor -  extracting")
 
         return self.parse_warc_record(record)

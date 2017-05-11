@@ -1,9 +1,10 @@
 import logging
+import numpy
 
 from .transformer import Transformer
 
 
-class TreeParser(Transformer):
+class TreeFormatter(Transformer):
     """Class for parsing a traversable lxml tree to an compact and easy to process tree-like structure
 
     This class handles the parsing of traversable treeformat to a compact recursive array representation.
@@ -22,17 +23,21 @@ class TreeParser(Transformer):
             For this class the requirements should generally be empty.
         output_transformation(str): label of the transformation that is applied in this object
     """
-    def __init__(self, relevant_attributes, filter_tags, replacement_dict, requirements, output_transformation):
+    def __init__(self, tags_dict,  requirements, output_transformation):
         super().__init__(requirements, output_transformation)
 
-        # include relevant attributes such as names and classes
-        self.relevant_attributes = relevant_attributes
-        # filter non structural tags from given tag list
-        self.filter_tags = filter_tags
-        # replace tag names with a more efficient representation
-        self.replacement_dict = replacement_dict
+        self.tags_dict = tags_dict
 
-    def parse(self, tree, depth=0):
+        dimension = len(self.tags_dict) + 1
+        self.matrix = numpy.zeros((dimension, dimension, dimension), dtype=numpy.int)
+        self.qgrams = []
+
+    def parse(self, tree):
+        parsed_tree, errors = self.parse_tree(tree, None)
+        return self.matrix.flatten(), errors
+        #return self.qgrams, errors
+
+    def parse_tree(self, tree, right_tree):
         """Recursive algorithm to parse a traversable tree to an easy to handle format.
 
         This recursive algorithm extracts the relevant data from each html tree element and then, executes
@@ -51,37 +56,68 @@ class TreeParser(Transformer):
                 The children have a similar structure (<tag>, <attributes>, [child1, child2])
             list: all errors that appeared during the Tree Parsing, all errors are cascaded up the tree.
         """
-        newtag = None
-        attr_array = []
         errors = []
 
+        # TODO: change documentation
+
+        node = tree[0]
         # Filter unwanted tags
         if tree is None:
-            errors.append('TreeParser: NoneType object')
-            return (None, None, []), errors
-        if tree.tag not in self.filter_tags and type(tree.tag) == str:
-            # Find replacement tag otherwise keep old tag
-            newtag = self.replacement_dict.get(tree.tag, None)  # filter custom tags
+            errors.append('BinaryTreeFormatter: NoneType object')
+            return (0, 0), errors
 
-            if newtag and False:
-                # Find relevant attributes
-                for attr in self.relevant_attributes:
-                    attr_val = tree.get(attr)
-                    if attr_val:
-                        attr_array.append((attr, attr_val))
+        new_left_node = 0
+        new_right_node = 0
 
-        child_array = []
-        for child in tree:
-            child_tuple, child_errors = self.parse(child, depth + 1)
-            errors.extend(child_errors)
+        if len(tree[2]) > 0:
+            first_child = tree[2][0]
+            other_children = tree[2][1:]
 
-            # If the node is filtered still add the child nodes of that node to this node
-            if not child_tuple[0]:
-                child_array.extend(child_tuple[2])
+            new_left_node, errors = self.parse_tree(first_child, other_children)
+
+        if right_tree and len(right_tree) > 0:
+            first_child = right_tree[0]
+            other_children = right_tree[1:]
+
+            new_right_node, errors = self.parse_tree(first_child, other_children)
+
+
+        """
+        next_child = None
+        if idx + 1 <= len(children):
+            next_child = children[idx+1]
+            next_child = (next_child[0], next_child[2])
+        """
+        idx1 = node
+        idx2 = 0
+        idx3 = 0
+        if new_left_node:
+            idx2 = new_left_node[0]
+        if new_right_node:
+            idx3 = new_right_node[0]
+
+        str_index = (str(idx1), str(idx2), str(idx3))
+        index = (idx1, idx2, idx3)
+
+        old_val = self.matrix[idx1, idx2, idx3]
+        self.matrix[idx1, idx2, idx3] = old_val + 1
+
+        #self.qgrams.append(".".join(index))
+        binary_subtree = (new_left_node, new_right_node)
+
+        return (node, binary_subtree), errors
+
+    def print_recursive(self, tree, depth=0):
+        # TODO: add documentation
+        if tree and type(tree) == tuple:
+            if type(tree[0]) == tuple:
+                self.print_recursive(tree[0], depth + 1)
             else:
-                child_array.append(child_tuple)
-
-        return (newtag, attr_array, child_array), errors
+                print(" " * depth + str(tree[0]))
+            if type(tree[1]) == tuple:
+                self.print_recursive(tree[1], depth + 1)
+            else:
+                print(" " * depth + str(tree[1]))
 
     def run(self, record):
         """Runs the TreeParse transformation on a record.
@@ -96,11 +132,11 @@ class TreeParser(Transformer):
             dict: Updated record with the data being the traversable html tree and
             the metadata containing new errors and the executed transformation step.
         """
-        logging.info("TreeParser -  parsing: {0}".format(record['url']))
+        logging.info("BinaryTreeFormatter -  parsing: {0}".format(record['url']))
         self.check_required_transformations(record['metadata']['transformations'])
 
-        parsed_tree, errors = self.parse(record['data'])
-        record['data'] = parsed_tree
+        matrix, errors = self.parse(record['data'])
+        record['data'] = matrix
         record['metadata']['errors'].extend(errors)
         record['metadata']['transformations'].append(self.output_transformation)
         return record
