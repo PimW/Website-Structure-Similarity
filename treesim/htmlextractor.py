@@ -1,5 +1,6 @@
 import warc3
 import logging
+import urllib.request
 
 from .transformer import Transformer
 
@@ -29,7 +30,7 @@ class HtmlExtractor(Transformer):
     Todo:
         * Rewrite to allow for a more flexible workflow
     """
-    def __init__(self, requirements, output_transformation, minlength=5000, max_files=1000):
+    def __init__(self, requirements, output_transformation, minlength=10000, max_files=1000):
         super().__init__(requirements, output_transformation)
 
         self.minlength = minlength
@@ -57,6 +58,7 @@ class HtmlExtractor(Transformer):
 
         Args:
             file: File iterable containing all warc objects
+            batch_size: Size of the batch that is extracted each time.
 
         Returns:
             list: List of parsed records from the file
@@ -66,17 +68,22 @@ class HtmlExtractor(Transformer):
         total_file_count = 0
         file_count = 0
         for record in file:
+            if total_file_count + file_count >= self.max_files:
+                yield results  # max files reached
+                return
+
             if file_count >= batch_size:
                 total_file_count += file_count
-                yield results  # break
+                res = results
                 results = []
                 file_count = 0
+                yield res  # break
 
             parsed_record = self.parse_warc_record(record)
             if parsed_record:
                 results.append(parsed_record)
                 file_count += 1
-        #return results
+        yield results  # batch_size is bigger than remaining file size
 
     def parse_warc_record(self, record):
         """Parse a single warc record.
@@ -108,13 +115,32 @@ class HtmlExtractor(Transformer):
         if record['WARC-type'] == 'response' and int(record['Content-Length']) > self.minlength:
             record_dict = dict()
             record_dict['url'] = record['WARC-target-URI']
+
             html_str = record.payload.read()
-            record_dict['data'] = html_str.split(b'\r\n\r\n', 1)[1].strip()
+            (response_headers, html_str) = html_str.split(b'\r\n\r\n', 1)
+
+            if b'301 Moved Permanently' in response_headers:
+                return
+
+            record_dict['data'] = html_str.strip()
             record_dict['metadata'] = {
                 'transformations': [self.output_transformation],
                 'errors': []
             }  # TODO: add extra metadata from file where necessary
             return record_dict
+
+    def record_from_url(self, url):
+        with urllib.request.urlopen(url) as response:
+            html = response.read()
+
+        record_dict = dict()
+        record_dict['url'] = url
+        record_dict['data'] = html
+        record_dict['metadata'] = {
+            'transformations': [self.output_transformation],
+            'errors': []
+        }  # TODO: add extra metadata from file where necessary
+        return record_dict
 
     def run(self, record):
         """Executes the transformation for a record.

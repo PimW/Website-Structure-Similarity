@@ -1,12 +1,13 @@
 As taken from https://www.w3schools.com/TAgs/ref_byfunc.asp
-<>  <a> 		Defines a hyperlink
-<>  <div> 		Defines a section in a document
-<span> 		Defines a section in a document
+<> <a> 		Defines a hyperlink
+<div> 		Defines a section in a document
+<> <span> 		Defines a section in a document
 <header> 	Defines a header for a document or section
-<footer> 	Defines a footer for a document or section
+<> <footer> 	Defines a footer for a document or section
 <table> 	Defines a table
-<caption> 	Defines a table caption
-<th> 		Defines a header cell in a table
+<html> 	Defines a table
+<> <caption> 	Defines a table caption
+<> <th> 		Defines a header cell in a table
 <> <tr> 		Defines a row in a table
 <> <td> 		Defines a cell in a table
 <thead> 	Groups the header content in a table
@@ -14,13 +15,13 @@ As taken from https://www.w3schools.com/TAgs/ref_byfunc.asp
 <tfoot> 	Groups the footer content in a table
 <ul> 		Defines an unordered list
 <ol> 		Defines an ordered list
-<>  <li> 		Defines a list item
-<dir> 		Defines a directory list
-<dl> 		Defines a description list
-<dt> 		Defines a term/name in a description list
-<dd> 		Defines a description of a term/name in a description list
-<menu> 		Defines a list/menu of commands
-<menuitem> 	Defines a command/menu item that the user can invoke from a popup menu
+<> <li> 		Defines a list item
+<> <dir> 		Defines a directory list
+<> <dl> 		Defines a description list
+<> <dt> 		Defines a term/name in a description list
+<> <dd> 		Defines a description of a term/name in a description list
+<> <menu> 		Defines a list/menu of commands
+<> <menuitem> 	Defines a command/menu item that the user can invoke from a popup menu
 <>  <link> 		Defines the relationship between a document and an external resource (most used to link to style sheets)
 <nav> 		Defines navigation links
 <>  <canvas> 	Used to draw graphics, on the fly, via scripting (usually JavaScript)
@@ -47,6 +48,6 @@ As taken from https://www.w3schools.com/TAgs/ref_byfunc.asp
 <aside> 	Defines content aside from the page content
 <>  <details> 	Defines additional details that the user can view or hide
 <>  <dialog> 	Defines a dialog box or window
-<summary> 	Defines a visible heading for a <details> element
+<> <summary> 	Defines a visible heading for a <details> element
 <>  <figcaption> 	Defines a caption for a <figure> element
-<html> 		Defines a hyperlink
+<> <html> 		Defines a hyperlink

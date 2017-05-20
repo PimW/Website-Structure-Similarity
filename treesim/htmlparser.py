@@ -1,4 +1,5 @@
 from lxml.html import fromstring
+from lxml import etree
 import lxml
 import logging
 
@@ -59,6 +60,7 @@ class HtmlParser(Transformer):
 
         parsed_html, errors = HtmlParser.parse_html(record['data'])
         record['data'] = parsed_html
+
         record['metadata']['errors'].extend(errors)
         record['metadata']['transformations'].append(self.output_transformation)
 

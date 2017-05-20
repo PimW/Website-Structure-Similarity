@@ -28,14 +28,14 @@ class TreeFormatter(Transformer):
 
         self.tags_dict = tags_dict
 
-        dimension = len(self.tags_dict) + 1
-        self.matrix = numpy.zeros((dimension, dimension, dimension), dtype=numpy.int)
-        self.qgrams = []
+        self.dimension = len(self.tags_dict) + 1
+        self.matrix = numpy.zeros((self.dimension, self.dimension, self.dimension), dtype=numpy.int)
+        self.qgrams = set()
 
     def parse(self, tree):
         parsed_tree, errors = self.parse_tree(tree, None)
-        return self.matrix.flatten(), errors
-        #return self.qgrams, errors
+        #return self.matrix.flatten(), errors
+        return self.matrix.flatten(), self.qgrams, errors
 
     def parse_tree(self, tree, right_tree):
         """Recursive algorithm to parse a traversable tree to an easy to handle format.
@@ -102,7 +102,7 @@ class TreeFormatter(Transformer):
         old_val = self.matrix[idx1, idx2, idx3]
         self.matrix[idx1, idx2, idx3] = old_val + 1
 
-        #self.qgrams.append(".".join(index))
+        self.qgrams.add(".".join(str_index))
         binary_subtree = (new_left_node, new_right_node)
 
         return (node, binary_subtree), errors
@@ -135,8 +135,15 @@ class TreeFormatter(Transformer):
         logging.info("BinaryTreeFormatter -  parsing: {0}".format(record['url']))
         self.check_required_transformations(record['metadata']['transformations'])
 
-        matrix, errors = self.parse(record['data'])
-        record['data'] = matrix
+        matrix, qgrams, errors = self.parse(record['data'])
+        record['data'] = {
+            'matrix': matrix,
+            'qgrams': qgrams
+        }
         record['metadata']['errors'].extend(errors)
         record['metadata']['transformations'].append(self.output_transformation)
+
+        self.matrix = numpy.zeros((self.dimension, self.dimension, self.dimension), dtype=numpy.int)
+        self.qgrams = set()
+
         return record

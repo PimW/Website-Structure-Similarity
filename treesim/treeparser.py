@@ -36,7 +36,7 @@ class TreeParser(Transformer):
         """Recursive algorithm to parse a traversable tree to an easy to handle format.
 
         This recursive algorithm extracts the relevant data from each html tree element and then, executes
-        this method recursively for each of it's children. For each elements the tagname is extracted
+        this method recursively for each of it's children. For each elements the tagname is extractedss
         and replaced (if necessary) unless it is filtered, the relevant attributes are extracted and
         stored in an array, finally recursively all the children are stored in the children array.
         If a specific child tag is filtered the children of that tag will be added to the current tag. This
