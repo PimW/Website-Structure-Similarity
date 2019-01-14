@@ -21,7 +21,6 @@ import numpy
 import hashlib
 from pprint import pprint
 
-
 parser = argparse.ArgumentParser()
 
 parser.add_argument('--query', help='Query url for lsh')
@@ -36,7 +35,6 @@ os.environ['PYSPARK_DRIVER_PYTHON'] = 'ipython'
 conf = SparkConf().setMaster("local").setAppName("My App")
 sc = SparkContext(conf=conf)
 
-
 # LOGGING SETUP
 FORMAT = '%(asctime)-15s %(message)s'
 logging.basicConfig(format=FORMAT, level=logging.INFO)
@@ -49,7 +47,7 @@ files = [
 ]
 
 relevant_attrs = ['class', 'name']
-filter_tags = [] #['span', 'p', 'script']
+filter_tags = []  # ['span', 'p', 'script']
 replacement_dict = {
     # tag: replacement
 }
@@ -88,6 +86,7 @@ def readNonStructuralTags():
             tag = line.split()[0][1:-1]  # take the tag, ignore the < and >
             filter_tags.append(tag)
 
+
 wmg = None
 
 
@@ -112,8 +111,7 @@ MAX_FILES = 1000
 HASH_SIZE = 128
 THRESHOLD = 0.7
 MODEL_FILE = 'lsh.pickle'
-MATRIX_FILE = 'matrix.pickle'
-
+MATRIX_FILE = 'matrix-sparse.pickle'
 
 
 def execute_pipeline(file):
@@ -134,7 +132,8 @@ def execute_pipeline(file):
         htmlRDD = recordsRDD.map(lambda x: html_parser.run(x))
         treeRDD = htmlRDD.map(lambda x: tree_parser.run(x))
         matrixRDD = treeRDD.map(lambda x: tree_to_matrix.run(x))
-        minhashRDD = matrixRDD.map(lambda x: (x['url'], create_minhash(x['data']['qgrams']), x['data']['matrix']))  # MinHash(num_perm=128).update(x['data'])))
+        minhashRDD = matrixRDD.map(lambda x: (x['url'], create_minhash(x['data']['qgrams']),
+                                              x['data']['matrix']))  # MinHash(num_perm=128).update(x['data'])))
 
         minhash_tuples = minhashRDD.collect()
 
@@ -185,16 +184,17 @@ def query_lsh(url):
     )
 
     minhash_tuple = (record['url'], create_minhash(record['data']['qgrams']), record['data']['matrix'])
-    lsh.insert(minhash_tuple[0]+ '*', minhash_tuple[1])
-    minhashes[minhash_tuple[0]+ '*'] = (minhash_tuple[1], minhash_tuple[2])
+    lsh.insert(minhash_tuple[0] + '*', minhash_tuple[1])
+    minhashes[minhash_tuple[0] + '*'] = (minhash_tuple[1], minhash_tuple[2])
     result = lsh.query(minhash_tuple[1])
 
     print("Similar pages to: {0}".format(url))
     for res in result:
         jaccard_similarity = minhash_tuple[1].jaccard(minhashes[res][0])
-        cosine_similarity = spatial.distance.cosine(minhash_tuple[2], minhashes[res][1])
+        cosine_similarity = spatial.distance.cosine(minhash_tuple[2].toarray(), minhashes[res][1].toarray())
 
         print("\t{0}({1}) \t {2}".format(jaccard_similarity, cosine_similarity, res))
+
 
 if __name__ == '__main__':
     readNonStructuralTags()
@@ -230,6 +230,5 @@ if __name__ == '__main__':
         query_lsh(args.query)
     else:
         parser.print_help()
-
 
     print("\n\n--- %s seconds ---" % (time.time() - start_time))

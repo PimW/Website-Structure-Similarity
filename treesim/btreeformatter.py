@@ -1,5 +1,6 @@
 import logging
 import numpy
+import scipy.sparse
 
 from .transformer import Transformer
 
@@ -35,7 +36,7 @@ class TreeFormatter(Transformer):
     def parse(self, tree):
         parsed_tree, errors = self.parse_tree(tree, None)
         #return self.matrix.flatten(), errors
-        return self.matrix.flatten(), self.qgrams, errors
+        return scipy.sparse.csr_matrix(self.matrix.flatten()), self.qgrams, errors
 
     def parse_tree(self, tree, right_tree):
         """Recursive algorithm to parse a traversable tree to an easy to handle format.
